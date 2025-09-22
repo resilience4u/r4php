@@ -8,18 +8,26 @@ use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 
 final class RateLimiterPolicy implements Policy
 {
-    public function __construct(private $limiterFactory, private string $name) {}
+    public function __construct(private RateLimiterFactory $factory, private string $name) {}
 
     public static function fromArray(array $a): self
     {
         $storage = new InMemoryStorage();
+
+        $perSecond = (int)($a['tokensPerSecond'] ?? $a['ratePerSecond'] ?? 10);
+        if ($perSecond < 1) { $perSecond = 1; }
+        $limit = (int)($a['limit'] ?? $a['burst'] ?? $perSecond);
+
         $cfg = [
-            'id' => $a['limiter'] ?? 'default',
+            'id'     => $a['limiter'] ?? 'default',
             'policy' => 'token_bucket',
-            'limit' => (int)($a['tokensPerSecond'] ?? 10),
-            'rate' => ['interval' => '1 second', 'amount' => (int)($a['tokensPerSecond'] ?? 10)],
-            'burst' => (int)($a['burst'] ?? 20),
+            'limit'  => $limit,
+            'rate'   => [
+                'interval' => '1 second',
+                'amount'   => $perSecond,
+            ],
         ];
+
         $factory = new RateLimiterFactory($cfg, $storage);
         return new self($factory, $cfg['id']);
     }
@@ -28,7 +36,7 @@ final class RateLimiterPolicy implements Policy
 
     public function execute(Executable $op): mixed
     {
-        $limiter = $this->limiterFactory->create($this->name);
+        $limiter = $this->factory->create($this->name);
         $token = $limiter->consume(1);
         if (!$token->isAccepted()) {
             throw new \RuntimeException('Rate limit exceeded');
