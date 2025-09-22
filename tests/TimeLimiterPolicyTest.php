@@ -1,6 +1,24 @@
 <?php
+declare(strict_types=1);
 
-class TimeLimiterPolicyTest
+use PHPUnit\Framework\TestCase;
+use Resiliente\R4PHP\Policies\TimeLimiterPolicy;
+use Resiliente\R4PHP\Contracts\Executable;
+
+final class TimeLimiterPolicyTest extends TestCase
 {
+    public function testThrowsWhenExceeded(): void
+    {
+        $p = TimeLimiterPolicy::fromArray(['timeoutMs' => 50]);
 
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Time limit exceeded');
+
+        $p->execute(new class implements Executable {
+            public function __invoke(): mixed {
+                usleep(150 * 1000);
+                return 'too-late';
+            }
+        });
+    }
 }
