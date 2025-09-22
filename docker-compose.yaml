@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  app:
+    build: .
+    image: resilience4u/r4php:dev
+    working_dir: /app
+    volumes:
+      - ./:/app
+    depends_on:
+      - httpbin
+
+  composer:
+    image: composer:2
+    working_dir: /app
+    volumes:
+      - ./:/app
+
+  httpbin:
+    image: mccutchen/go-httpbin:v2.14.0
+    ports:
+      - "8080:8080"
