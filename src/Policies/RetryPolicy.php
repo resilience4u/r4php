@@ -16,16 +16,22 @@ final class RetryPolicy implements Policy
 
     public static function fromArray(array $a): self
     {
-        $strategy = ($a['strategy'] ?? 'exponential') === 'constant'
-            ? new ConstantStrategy(interval: ($a['intervalMs'] ?? 200) / 1000)
-            : new ExponentialStrategy(
-                initialDelay: ($a['initialMs'] ?? 200) / 1000,
-                maxDelay:     ($a['maxMs'] ?? 5_000) / 1000,
-                multiplier:   $a['multiplier'] ?? 2.0,
-                jitter:       $a['jitter'] ?? true
-            );
+        $strategyName = $a['strategy'] ?? 'exponential';
 
-        $bo = new Backoff($strategy, attempts: $a['maxAttempts'] ?? 5);
+        if ($strategyName === 'constant') {
+            $intervalMs = (int)($a['intervalMs'] ?? 200);
+            $strategy = new ConstantStrategy($intervalMs);
+        } else {
+            $initialMs = (int)($a['initialMs'] ?? 200);
+            $maxMs     = (int)($a['maxMs'] ?? 5000);
+            $mult      = (float)($a['multiplier'] ?? 2.0);
+            $jitter    = (bool)($a['jitter'] ?? true);
+            $strategy  = new ExponentialStrategy($initialMs, $maxMs, $mult, $jitter);
+        }
+
+        $attempts = (int)($a['maxAttempts'] ?? 5);
+        $bo = new Backoff($attempts, $strategy);
+
         return new self($bo);
     }
 
