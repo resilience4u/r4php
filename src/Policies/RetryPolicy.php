@@ -23,10 +23,8 @@ final class RetryPolicy implements Policy
             $strategy = new ConstantStrategy($intervalMs);
         } else {
             $initialMs = (int)($a['initialMs'] ?? 200);
-            $maxMs     = (int)($a['maxMs'] ?? 5000);
-            $mult      = (float)($a['multiplier'] ?? 2.0);
-            $jitter    = (bool)($a['jitter'] ?? true);
-            $strategy  = new ExponentialStrategy($initialMs, $maxMs, $mult, $jitter);
+            /** @var ExponentialStrategy $strategy */
+            $strategy  = new ExponentialStrategy($initialMs);
         }
 
         $attempts = (int)($a['maxAttempts'] ?? 5);
