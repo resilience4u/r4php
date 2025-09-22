@@ -26,11 +26,14 @@ final class Chain implements Policy
             array_reverse($this->policies),
             fn(callable $next, Policy $p) =>
             fn() => $p->execute(new class($next) implements Executable {
-                public function __construct(private $next) {}
+                /** @var callable */
+                private $next;
+                public function __construct(callable $next) { $this->next = $next; }
                 public function __invoke(): mixed { return ($this->next)(); }
             }),
             fn() => $op()
         );
+
 
         return $wrapped();
     }

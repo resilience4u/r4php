@@ -6,12 +6,9 @@ use Resiliente\R4PHP\Contracts\Policy;
 
 final class BulkheadPolicy implements Policy
 {
-    /** @var \SplQueue<int> */ private \SplQueue $q;
     private int $inflight = 0;
 
-    public function __construct(private int $maxConcurrent = 32) {
-        $this->q = new \SplQueue();
-    }
+    public function __construct(private int $maxConcurrent = 32) {}
 
     public static function fromArray(array $a): self
     {

@@ -44,8 +44,11 @@ final class RetryPolicyTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $p->execute(new class implements Executable {
+            private static int $c = 0;
             public function __invoke(): mixed {
-                throw new RuntimeException('always');
+                self::$c++;
+                if (self::$c < 3) throw new RuntimeException('fail');
+                return 'ok';
             }
         });
     }
