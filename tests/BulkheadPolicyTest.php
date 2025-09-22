@@ -15,7 +15,7 @@ final class BulkheadPolicyTest extends TestCase
         $this->expectExceptionMessage('Bulkhead full');
 
         $p->execute(new class($p) implements Executable {
-            public function __construct(private $p) {}
+            public function __construct(BulkheadPolicy $p) { $this->p = $p; }
             public function __invoke(): mixed {
                 return $this->p->execute(new class implements Executable {
                     public function __invoke(): mixed { return 'inner'; }
