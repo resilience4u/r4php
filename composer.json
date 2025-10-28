@@ -1,5 +1,5 @@
 {
-  "name": "resiliente/r4php",
+  "name": "resilience4u/r4php",
   "description": "Resilience toolkit (Retry, CircuitBreaker, RateLimiter, etc.) com DX unificada, embrulhando libs maduras.",
   "type": "library",
   "license": "Apache-2.0",
