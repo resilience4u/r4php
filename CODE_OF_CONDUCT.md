@@ -30,7 +30,7 @@ Comportamentos que não serão tolerados incluem (mas não se limitam a):
 
 ## Aplicação e Denúncias
 
-- Casos de abuso, assédio ou qualquer comportamento inaceitável podem ser relatados por e-mail para **resilience4u@proton.me** ou através de **issues privadas** no GitHub.
+- Casos de abuso, assédio ou qualquer comportamento inaceitável podem ser relatados por e-mail para **resilience4u@gmail.com** ou através de **issues privadas** no GitHub.
 - Todas as denúncias serão investigadas e tratadas com **confidencialidade e respeito**.
 - A equipe de mantenedores se reserva o direito de tomar ações corretivas apropriadas, que podem incluir avisos, suspensões temporárias ou remoção permanente da comunidade.
 
