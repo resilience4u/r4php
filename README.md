@@ -3,7 +3,8 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-%5E8.1-8892BF.svg)](https://www.php.net/)
 [![Build](https://img.shields.io/github/actions/workflow/status/resilience4u/r4php/ci.yml?label=build)](https://github.com/resilience4u/r4php/actions)
-[![Coverage](https://img.shields.io/codecov/c/github/resilience4u/r4php?label=coverage)](https://codecov.io/gh/resilience4u/r4php)
+[![CODECOV](https://codecov.io/gh/resilience4u/r4php/branch/main/graph/badge.svg)](https://codecov.io/gh/resilience4u/r4php)
+
 
 > **R4PHP** é a biblioteca da família **Resilience4u** para o ecossistema PHP — um conjunto de políticas de resiliência (Retry, Circuit Breaker, Bulkhead, Time Limiter, Rate Limiter) inspiradas no [Resilience4j](https://github.com/resilience4j/resilience4j).
 
