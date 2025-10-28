@@ -16,7 +16,7 @@ jobs:
       - name: Start httpbin
         run: docker compose up -d httpbin
       - name: Run tests
-        run: docker compose run --rm app ./vendor/bin/phpunit --colors=always
+        run: docker compose run --rm app ./vendor/bin/phpunit --colors=always --coverage-clover coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
