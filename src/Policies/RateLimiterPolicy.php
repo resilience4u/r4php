@@ -1,8 +1,9 @@
 <?php
 namespace Resiliente\R4PHP\Policies;
 
-use Resiliente\R4PHP\Contracts\Executable;
-use Resiliente\R4PHP\Contracts\Policy;
+
+use Resilience4u\R4Contracts\Contracts\Executable;
+use Resilience4u\R4Contracts\Contracts\Policy;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\InMemoryStorage;
 

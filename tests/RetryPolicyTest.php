@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use Resilience4u\R4Contracts\Contracts\Executable;
 use Resiliente\R4PHP\Policies\RetryPolicy;
-use Resiliente\R4PHP\Contracts\Executable;
 
 final class RetryPolicyTest extends TestCase
 {

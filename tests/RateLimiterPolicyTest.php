@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use Resilience4u\R4Contracts\Contracts\Executable;
 use Resiliente\R4PHP\Policies\RateLimiterPolicy;
-use Resiliente\R4PHP\Contracts\Executable;
 
 final class RateLimiterPolicyTest extends TestCase
 {

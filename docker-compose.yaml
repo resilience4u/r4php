@@ -1,9 +1,11 @@
-version: "3.9"
 services:
   app:
     build: .
     image: resilience4u/r4php:dev
     working_dir: /app
+    command: /bin/bash
+    stdin_open: true
+    tty: true
     volumes:
       - ./:/app
     depends_on:
@@ -19,3 +21,9 @@ services:
     image: mccutchen/go-httpbin:v2.14.0
     ports:
       - "8080:8080"
+    networks:
+      - bubble
+
+networks:
+  bubble:
+    external: true

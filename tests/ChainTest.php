@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use Resilience4u\R4Contracts\Contracts\Executable;
+use Resilience4u\R4Contracts\Contracts\Policy;
 use Resiliente\R4PHP\Core\Chain;
-use Resiliente\R4PHP\Contracts\Executable;
-use Resiliente\R4PHP\Contracts\Policy;
 
 final class ChainTest extends TestCase
 {

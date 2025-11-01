@@ -1,8 +1,9 @@
 <?php
 namespace Resiliente\R4PHP\Policies;
 
-use Resiliente\R4PHP\Contracts\Executable;
-use Resiliente\R4PHP\Contracts\Policy;
+
+use Resilience4u\R4Contracts\Contracts\Executable;
+use Resilience4u\R4Contracts\Contracts\Policy;
 use STS\Backoff\Backoff;
 use STS\Backoff\Strategies\ExponentialStrategy;
 use STS\Backoff\Strategies\ConstantStrategy;
@@ -23,7 +24,6 @@ final class RetryPolicy implements Policy
             $strategy = new ConstantStrategy($intervalMs);
         } else {
             $initialMs = (int)($a['initialMs'] ?? 200);
-            /** @var ExponentialStrategy $strategy */
             $strategy  = new ExponentialStrategy($initialMs);
         }
 

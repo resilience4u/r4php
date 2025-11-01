@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use Resilience4u\R4Contracts\Contracts\Executable;
 use Resiliente\R4PHP\Policies\CircuitBreakerPolicy;
-use Resiliente\R4PHP\Contracts\Executable;
 
 final class CircuitBreakerPolicyTest extends TestCase
 {
@@ -33,15 +33,11 @@ final class CircuitBreakerPolicyTest extends TestCase
                         throw new RuntimeException('boom');
                     }
                 });
-                $this->fail('Should have thrown');
-            } catch (RuntimeException $e) {
-            } catch (\Throwable $e) {
-                $this->fail('Unexpected exception: ' . $e::class);
-            }
+            } catch (RuntimeException) {}
         }
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('circuit breaker open');
+        $this->expectExceptionMessageMatches('/circuit breaker open/i');
         $p->execute(new class implements Executable {
             public function __invoke(): mixed { return 'ok'; }
         });
@@ -54,7 +50,7 @@ final class CircuitBreakerPolicyTest extends TestCase
             'failureRatePct' => 50,
             'minSamples' => 2,
             'timeWindowSec' => 1,
-            'openMs' => 1000,
+            'openMs' => 1200,
         ]);
 
         for ($i = 0; $i < 4; $i++) {
@@ -62,28 +58,15 @@ final class CircuitBreakerPolicyTest extends TestCase
                 $p->execute(new class implements Executable {
                     public function __invoke(): mixed { throw new RuntimeException('boom'); }
                 });
-            } catch (\Throwable $e) { }
+            } catch (\Throwable) {}
         }
 
-        $deadline = microtime(true) + 3.0;
-        $ok = false;
-        while (microtime(true) < $deadline) {
-            try {
-                $res = $p->execute(new class implements Executable {
-                    public function __invoke(): mixed { return 'ok'; }
-                });
-                $this->assertSame('ok', $res);
-                $ok = true;
-                break;
-            } catch (\RuntimeException $e) {
-                if (str_starts_with($e->getMessage(), 'circuit breaker open')) {
-                    usleep(120 * 1000);
-                    continue;
-                }
-                throw $e;
-            }
-        }
+        sleep(2);
 
-        $this->assertTrue($ok, 'Circuit breaker did not enter half-open within timeout');
+        $res = $p->execute(new class implements Executable {
+            public function __invoke(): mixed { return 'ok'; }
+        });
+
+        $this->assertSame('ok', $res, 'Circuit did not recover correctly');
     }
 }

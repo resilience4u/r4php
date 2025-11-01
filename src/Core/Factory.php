@@ -1,7 +1,7 @@
 <?php
 namespace Resiliente\R4PHP\Core;
 
-use Resiliente\R4PHP\Contracts\Policy;
+use Resilience4u\R4Contracts\Contracts\Policy;
 use Resiliente\R4PHP\Policies\RateLimiterPolicy;
 use Resiliente\R4PHP\Policies\BulkheadPolicy;
 use Resiliente\R4PHP\Policies\TimeLimiterPolicy;

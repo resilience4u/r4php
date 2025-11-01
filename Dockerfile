@@ -14,6 +14,7 @@ RUN pecl install pcov \
  && echo "pcov.directory=/app/src" >> /usr/local/etc/php/conf.d/pcov.ini \
  && echo "pcov.exclude=\"~(vendor)~\"" >> /usr/local/etc/php/conf.d/pcov.ini
 
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 COPY src ./src
 COPY examples ./examples

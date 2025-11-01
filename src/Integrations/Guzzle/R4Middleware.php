@@ -1,33 +1,35 @@
 <?php
+declare(strict_types=1);
+
 namespace Resiliente\R4PHP\Integrations\Guzzle;
 
+use GuzzleHttp\Promise\PromiseInterface;
 use Psr\Http\Message\RequestInterface;
-use Resiliente\R4PHP\Contracts\Executable;
-use Resiliente\R4PHP\Contracts\Policy;
+use Resilience4u\R4Contracts\Contracts\Executable;
+use Resilience4u\R4Contracts\Contracts\Policy;
 
 final class R4Middleware
 {
+    /**
+     * Wraps a Policy (e.g., Retry + CircuitBreaker) into a Guzzle middleware.
+     */
     public static function wrap(Policy $policy): callable
     {
-        return function (RequestInterface $request, array $options) use ($handler, $policy) {
-            return $policy->execute(new class($handler, $request, $options) implements Executable {
-                /** @var callable */
-                private $handler;
-                private RequestInterface $request;
-                /** @var array<string,mixed> */
-                private array $options;
+        return function (callable $handler) use ($policy): callable {
+            return function (RequestInterface $request, array $options) use ($handler, $policy): PromiseInterface {
+                return $policy->execute(new class($handler, $request, $options) implements Executable {
+                    public function __construct(
+                        private $handler,
+                        private RequestInterface $request,
+                        private array $options
+                    ) {}
 
-                /** @param array<string,mixed> $options */
-                public function __construct(callable $handler, RequestInterface $request, array $options)
-                {
-                    $this->handler = $handler;
-                    $this->request = $request;
-                    $this->options = $options;
-                }
-                public function __invoke(): mixed {
-                    return ($this->handler)($this->request, $this->options);
-                }
-            });
+                    public function __invoke(): mixed
+                    {
+                        return ($this->handler)($this->request, $this->options);
+                    }
+                });
+            };
         };
     }
 }

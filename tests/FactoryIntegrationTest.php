@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\TestCase;
+use Resilience4u\R4Contracts\Contracts\Executable;
 use Resiliente\R4PHP\Core\Config;
 use Resiliente\R4PHP\Core\Factory;
-use Resiliente\R4PHP\Contracts\Executable;
 
 final class FactoryIntegrationTest extends TestCase
 {
