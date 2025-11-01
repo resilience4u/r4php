@@ -53,8 +53,17 @@ final class CircuitBreakerPolicy implements Policy
         if ($state === self::STATE_OPEN) {
             if (Time::elapsedMs($openedAt) > $this->openDurationMs) {
                 $this->transitionToHalfOpen();
+                $state = self::STATE_HALF_OPEN;
             } else {
                 throw new \RuntimeException("circuit breaker open: {$this->name}");
+            }
+        }
+
+        if ($state === self::STATE_CLOSED) {
+            $metrics = $this->getMetrics();
+            if ($this->shouldOpen($metrics)) {
+                $this->transitionToOpen();
+                throw new \RuntimeException("circuit breaker opening: {$this->name}");
             }
         }
 
@@ -68,9 +77,6 @@ final class CircuitBreakerPolicy implements Policy
                             $this->recordFailure();
                         } else {
                             $this->recordSuccess();
-                            if ($this->storage->get("{$this->name}:state", self::STATE_CLOSED) === self::STATE_HALF_OPEN) {
-                                $this->transitionToClosed();
-                            }
                         }
                         return $response;
                     },
@@ -87,9 +93,6 @@ final class CircuitBreakerPolicy implements Policy
                 $this->recordFailure();
             } else {
                 $this->recordSuccess();
-                if ($this->storage->get("{$this->name}:state", self::STATE_CLOSED) === self::STATE_HALF_OPEN) {
-                    $this->transitionToClosed();
-                }
             }
 
             return $result;
@@ -102,8 +105,17 @@ final class CircuitBreakerPolicy implements Policy
 
     private function recordSuccess(): void
     {
-        $key = "{$this->name}:metrics:success";
-        $this->storage->increment($key, 1, $this->timeWindowSec);
+        $state = $this->storage->get("{$this->name}:state", self::STATE_CLOSED);
+
+        if ($state === self::STATE_HALF_OPEN) {
+            $this->transitionToClosed();
+            return;
+        }
+
+        if ($state === self::STATE_CLOSED) {
+            $key = "{$this->name}:metrics:success";
+            $this->storage->increment($key, 1, $this->timeWindowSec);
+        }
     }
 
     private function recordFailure(): void
@@ -120,19 +132,7 @@ final class CircuitBreakerPolicy implements Policy
         }
 
         $failureKey = "{$this->name}:metrics:failures";
-        $successKey = "{$this->name}:metrics:success";
-
-        $newFailures = $this->storage->increment($failureKey, 1, $this->timeWindowSec);
-        $successes = (int)$this->storage->get($successKey, 0);
-
-        $metrics = [
-            'failures' => $newFailures,
-            'success' => $successes,
-        ];
-
-        if ($this->shouldOpen($metrics)) {
-            $this->transitionToOpen();
-        }
+        $this->storage->increment($failureKey, 1, $this->timeWindowSec);
     }
 
     private function getMetrics(): array
@@ -147,11 +147,6 @@ final class CircuitBreakerPolicy implements Policy
             'success' => (int)($values["{$this->name}:metrics:success"] ?? 0),
             'failures' => (int)($values["{$this->name}:metrics:failures"] ?? 0),
         ];
-    }
-
-    private function saveMetrics(array $metrics): void
-    {
-        $this->storage->set("{$this->name}:metrics", $metrics);
     }
 
     private function getFailureRate(array $m): float
