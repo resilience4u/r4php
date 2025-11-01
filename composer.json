@@ -9,7 +9,7 @@
     "symfony/rate-limiter": "^6.4 || ^7.0",
     "stechstudio/backoff": "^1.6",
     "guzzlehttp/guzzle": "^7.9",
-    "resilience4u/r4contracts": "dev-main"
+    "resilience4u/r4contracts": "@dev"
   },
   "require-dev": {
     "phpunit/phpunit": "^10.5",
@@ -21,15 +21,6 @@
     "stan": "phpstan analyse -c phpstan.neon",
     "fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --ansi"
   },
-  "repositories": [
-    {
-      "type": "path",
-      "url": "/r4contracts",
-      "options": {
-        "symlink": true
-      }
-    }
-  ],
   "autoload": {
     "psr-4": {
       "Resiliente\\R4PHP\\": "src/"
