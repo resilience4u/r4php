@@ -5,64 +5,46 @@ namespace Resiliente\R4PHP\Storage;
 
 use Resilience4u\R4Contracts\Contracts\StorageAdapter;
 
-/**
- * Simple file-based storage for demo/debug purposes.
- * Stores each key as serialized file under /tmp/r4php-cache/
- */
-final class FileStorage implements StorageAdapter
+final class ApcuStorage implements StorageAdapter
 {
-    private string $dir;
-
-    public function __construct(?string $dir = null)
-    {
-        $this->dir = $dir ?? sys_get_temp_dir() . '/r4php-cache';
-        if (!is_dir($this->dir)) {
-            @mkdir($this->dir, 0777, true);
-        }
-    }
-
-    private function path(string $key): string
-    {
-        return $this->dir . '/' . md5($key) . '.cache';
-    }
-
     public function get(string $key, mixed $default = null): mixed
     {
-        $file = $this->path($key);
-        if (!file_exists($file)) {
-            return $default;
-        }
-
-        $data = file_get_contents($file);
-        return $data === false ? $default : unserialize($data);
+        $success = false;
+        $value = apcu_fetch($key, $success);
+        return $success ? $value : $default;
     }
 
     public function set(string $key, mixed $value, ?int $ttl = null): bool
     {
-        $file = $this->path($key);
-        return file_put_contents($file, serialize($value)) !== false;
+        return apcu_store($key, $value, $ttl ?? 0);
     }
 
     public function delete(string $key): bool
     {
-        $file = $this->path($key);
-        return file_exists($file) ? @unlink($file) : true;
+        return (bool)apcu_delete($key);
     }
 
     public function increment(string $key, int $by = 1, ?int $ttl = null): int
     {
-        $value = (int)$this->get($key, 0);
-        $value += $by;
-        $this->set($key, $value);
-        return $value;
+        if (!apcu_exists($key)) {
+            apcu_add($key, 0, $ttl ?? 0);
+        }
+        $newValue = apcu_inc($key, $by);
+        if ($ttl) {
+            apcu_store($key, $newValue, $ttl);
+        }
+        return $newValue;
     }
 
     public function getMultiple(array $keys): array
     {
-        $res = [];
-        foreach ($keys as $key) {
-            $res[$key] = $this->get($key);
+        $found = [];
+        $values = apcu_fetch($keys, $success);
+        if (is_array($values)) {
+            foreach ($keys as $key) {
+                $found[$key] = $values[$key] ?? null;
+            }
         }
-        return $res;
+        return $found;
     }
 }

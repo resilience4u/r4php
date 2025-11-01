@@ -11,7 +11,6 @@ use Resilience4u\R4Contracts\Contracts\StorageAdapter;
 use Resilience4u\R4Contracts\Support\Time;
 use Resiliente\R4PHP\Storage\InMemoryStorage;
 
-
 final class CircuitBreakerPolicy implements Policy
 {
     private const STATE_CLOSED    = 'closed';
@@ -67,16 +66,16 @@ final class CircuitBreakerPolicy implements Policy
                     function ($response) {
                         if ($response instanceof ResponseInterface && $response->getStatusCode() >= 500) {
                             $this->recordFailure();
-                            $this->maybeReopenIfHalfOpen();
                         } else {
                             $this->recordSuccess();
-                            $this->transitionToClosed();
+                            if ($this->storage->get("{$this->name}:state", self::STATE_CLOSED) === self::STATE_HALF_OPEN) {
+                                $this->transitionToClosed();
+                            }
                         }
                         return $response;
                     },
                     function ($reason) {
                         $this->recordFailure();
-                        $this->maybeReopenIfHalfOpen();
                         throw $reason instanceof \Throwable
                             ? $reason
                             : new \RuntimeException(is_scalar($reason) ? (string)$reason : 'Request failed');
@@ -86,40 +85,50 @@ final class CircuitBreakerPolicy implements Policy
 
             if ($result instanceof ResponseInterface && $result->getStatusCode() >= 500) {
                 $this->recordFailure();
-                $this->maybeReopenIfHalfOpen();
             } else {
                 $this->recordSuccess();
-                $this->transitionToClosed();
+                if ($this->storage->get("{$this->name}:state", self::STATE_CLOSED) === self::STATE_HALF_OPEN) {
+                    $this->transitionToClosed();
+                }
             }
 
             return $result;
 
         } catch (\Throwable $e) {
             $this->recordFailure();
-            $this->maybeReopenIfHalfOpen();
             throw $e;
-        }
-    }
-
-    private function maybeReopenIfHalfOpen(): void
-    {
-        if ($this->storage->get("{$this->name}:state", self::STATE_CLOSED) === self::STATE_HALF_OPEN) {
-            $this->transitionToOpen();
         }
     }
 
     private function recordSuccess(): void
     {
-        $metrics = $this->getMetrics();
-        $metrics['success'] = ($metrics['success'] ?? 0) + 1;
-        $this->saveMetrics($metrics);
+        $key = "{$this->name}:metrics:success";
+        $this->storage->increment($key, 1, $this->timeWindowSec);
     }
 
     private function recordFailure(): void
     {
-        $metrics = $this->getMetrics();
-        $metrics['failures'] = ($metrics['failures'] ?? 0) + 1;
-        $this->saveMetrics($metrics);
+        $state = $this->storage->get("{$this->name}:state", self::STATE_CLOSED);
+
+        if ($state === self::STATE_HALF_OPEN) {
+            $this->transitionToOpen();
+            return;
+        }
+
+        if ($state === self::STATE_OPEN) {
+            return;
+        }
+
+        $failureKey = "{$this->name}:metrics:failures";
+        $successKey = "{$this->name}:metrics:success";
+
+        $newFailures = $this->storage->increment($failureKey, 1, $this->timeWindowSec);
+        $successes = (int)$this->storage->get($successKey, 0);
+
+        $metrics = [
+            'failures' => $newFailures,
+            'success' => $successes,
+        ];
 
         if ($this->shouldOpen($metrics)) {
             $this->transitionToOpen();
@@ -128,20 +137,16 @@ final class CircuitBreakerPolicy implements Policy
 
     private function getMetrics(): array
     {
-        $key = "{$this->name}:metrics";
-        $raw = $this->storage->get($key);
+        $keys = [
+            "{$this->name}:metrics:success",
+            "{$this->name}:metrics:failures",
+        ];
 
-        if (!is_array($raw) || !isset($raw['success'], $raw['failures'], $raw['timestamp'])) {
-            $raw = ['success' => 0, 'failures' => 0, 'timestamp' => time()];
-            $this->storage->set($key, $raw);
-        }
-
-        if (time() - ($raw['timestamp'] ?? 0) > $this->timeWindowSec) {
-            $raw = ['success' => 0, 'failures' => 0, 'timestamp' => time()];
-            $this->storage->set($key, $raw);
-        }
-
-        return $raw;
+        $values = $this->storage->getMultiple($keys);
+        return [
+            'success' => (int)($values["{$this->name}:metrics:success"] ?? 0),
+            'failures' => (int)($values["{$this->name}:metrics:failures"] ?? 0),
+        ];
     }
 
     private function saveMetrics(array $metrics): void
@@ -166,30 +171,27 @@ final class CircuitBreakerPolicy implements Policy
 
     private function transitionToOpen(): void
     {
-        $this->debug();
+        $this->debug('OPEN');
         $this->storage->set("{$this->name}:state", self::STATE_OPEN);
         $this->storage->set("{$this->name}:openedAt", Time::nowMs());
     }
 
     private function transitionToHalfOpen(): void
     {
-        $this->debug();
+        $this->debug('HALF_OPEN');
         $this->storage->set("{$this->name}:state", self::STATE_HALF_OPEN);
     }
 
     private function transitionToClosed(): void
     {
+        $this->debug('CLOSED');
         $this->storage->set("{$this->name}:state", self::STATE_CLOSED);
-        $this->storage->set("{$this->name}:metrics", [
-            'success' => 0,
-            'failures' => 0,
-            'timestamp' => time()
-        ]);
+        $this->storage->delete("{$this->name}:metrics:failures");
+        $this->storage->delete("{$this->name}:metrics:success");
     }
 
-    private function debug(): void
+    private function debug(string $toState): void
     {
-        error_log("[R4PHP] Circuit {$this->name} -> OPEN aos " . Time::nowMs());
-        error_log("[R4PHP] Circuit {$this->name} -> CLOSED aos " . Time::nowMs());
+        error_log("[R4PHP] Circuit {$this->name} transitioned to {$toState} at " . Time::nowMs());
     }
 }

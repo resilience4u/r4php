@@ -9,7 +9,7 @@
     "symfony/rate-limiter": "^6.4 || ^7.0",
     "stechstudio/backoff": "^1.6",
     "guzzlehttp/guzzle": "^7.9",
-    "resilience4u/r4contracts": "@dev"
+    "resilience4u/r4contracts": "dev-main"
   },
   "require-dev": {
     "phpunit/phpunit": "^10.5",

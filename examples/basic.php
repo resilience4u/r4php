@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use Resilience4u\R4Contracts\Contracts\Executable;
 use Resiliente\R4PHP\Core\Config;
 use Resiliente\R4PHP\Policies\CircuitBreakerPolicy;
 use Resiliente\R4PHP\Policies\RetryPolicy;
