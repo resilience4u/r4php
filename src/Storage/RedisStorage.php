@@ -16,10 +16,8 @@ final class RedisStorage implements StorageAdapter
         int $port = 6379,
         float $timeout = 1.5
     ) {
-        if ($redis) {
-            $this->redis = $redis;
-        } else {
-            $this->redis = new Redis();
+        $this->redis = $redis ?? new Redis();
+        if (!$redis) {
             $this->redis->connect($host, $port, $timeout);
         }
     }
@@ -30,18 +28,37 @@ final class RedisStorage implements StorageAdapter
         return $value === false ? $default : unserialize($value);
     }
 
-    public function set(string $key, mixed $value, ?int $ttl = null): void
+    public function set(string $key, mixed $value, ?int $ttl = null): bool
     {
         $serialized = serialize($value);
         if ($ttl) {
-            $this->redis->setex($key, $ttl, $serialized);
-        } else {
-            $this->redis->set($key, $serialized);
+            return $this->redis->setex($key, $ttl, $serialized);
         }
+        return $this->redis->set($key, $serialized);
     }
 
-    public function delete(string $key): void
+    public function delete(string $key): bool
     {
-        $this->redis->del($key);
+        return (bool)$this->redis->del($key);
+    }
+
+    public function increment(string $key, int $by = 1, ?int $ttl = null): int
+    {
+        $newVal = $this->redis->incrBy($key, $by);
+        if ($ttl) {
+            $this->redis->expire($key, $ttl);
+        }
+        return $newVal;
+    }
+
+    public function getMultiple(array $keys): array
+    {
+        $values = $this->redis->mGet($keys);
+        $result = [];
+        foreach ($keys as $i => $key) {
+            $val = $values[$i];
+            $result[$key] = $val === false ? null : unserialize($val);
+        }
+        return $result;
     }
 }

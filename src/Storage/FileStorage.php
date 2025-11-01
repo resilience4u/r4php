@@ -37,14 +37,32 @@ final class FileStorage implements StorageAdapter
         return $data === false ? $default : unserialize($data);
     }
 
-    public function set(string $key, mixed $value, ?int $ttl = null): void
+    public function set(string $key, mixed $value, ?int $ttl = null): bool
     {
         $file = $this->path($key);
-        file_put_contents($file, serialize($value));
+        return file_put_contents($file, serialize($value)) !== false;
     }
 
-    public function delete(string $key): void
+    public function delete(string $key): bool
     {
-        @unlink($this->path($key));
+        $file = $this->path($key);
+        return file_exists($file) ? @unlink($file) : true;
+    }
+
+    public function increment(string $key, int $by = 1, ?int $ttl = null): int
+    {
+        $value = (int)$this->get($key, 0);
+        $value += $by;
+        $this->set($key, $value);
+        return $value;
+    }
+
+    public function getMultiple(array $keys): array
+    {
+        $res = [];
+        foreach ($keys as $key) {
+            $res[$key] = $this->get($key);
+        }
+        return $res;
     }
 }
