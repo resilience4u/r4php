@@ -1,8 +1,8 @@
 <?php
 namespace Resiliente\R4PHP\Policies;
 
-use Resiliente\R4PHP\Contracts\Policy;
-use Resiliente\R4PHP\Contracts\Executable;
+use Resilience4u\R4Contracts\Contracts\Executable;
+use Resilience4u\R4Contracts\Contracts\Policy;
 
 /**
  * Compose multiple policies into a single executable unit.
